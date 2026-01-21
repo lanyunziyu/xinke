@@ -32,16 +32,22 @@ class MCPClient:
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """
         加载MCP配置文件
-        
+
         Args:
             config_path: 配置文件路径
-            
+
         Returns:
             配置字典
         """
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config_data = json.load(f)
+                # 兼容两种配置格式:
+                # 1. {"mcpServers": {...}} - 标准格式
+                # 2. {...} - 直接的工具配置
+                if "mcpServers" in config_data:
+                    return config_data["mcpServers"]
+                return config_data
         except FileNotFoundError:
             logger.error(f"MCP配置文件未找到: {config_path}")
             raise
