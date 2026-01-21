@@ -88,7 +88,9 @@ class ReportGeneratorTool(BaseTool):
         self,
         user_profile: Dict[str, Any],
         policies: Dict[str, Any],
-        cost_breakdown: Dict[str, Any]
+        cost_breakdown: Dict[str, Any],
+        save_pdf: bool = True,
+        output_dir: str = "output/reports"
     ) -> Dict[str, Any]:
         """
         生成购房方案报告 - 使用LLM生成人话版报告。
@@ -99,6 +101,8 @@ class ReportGeneratorTool(BaseTool):
             user_profile: 用户画像信息
             policies: 政策信息
             cost_breakdown: 成本计算结果
+            save_pdf: 是否自动保存为PDF（默认True）
+            output_dir: PDF输出目录（默认 output/reports）
 
         Returns:
             包含报告内容的字典
@@ -116,6 +120,21 @@ class ReportGeneratorTool(BaseTool):
             "policies": policies,
             "cost_breakdown": cost_breakdown,
         }
+
+        # 自动转换为PDF
+        if save_pdf:
+            try:
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                pdf_filename = f"购房方案报告_{timestamp}.pdf"
+                pdf_path = Path(output_dir) / pdf_filename
+
+                pdf_file = self.export_to_pdf(report_content, pdf_path)
+                report["pdf_path"] = str(pdf_file)
+                logger.info(f"PDF报告已保存: {pdf_file}")
+            except Exception as e:
+                logger.error(f"PDF转换失败: {e}")
+                report["pdf_error"] = str(e)
 
         logger.info("报告生成完成")
         return report
@@ -355,9 +374,133 @@ class ReportGeneratorTool(BaseTool):
         Returns:
             PDF文件路径
         """
-        # TODO: 实现PDF导出
-        # 可以使用 reportlab 或 weasyprint
-        logger.info(f"导出PDF到 {output_path}")
+        from markdown import markdown
+        from weasyprint import HTML
+
+        logger.info(f"开始转换PDF: {output_path}")
+
+        # 确保输出目录存在
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # 将 Markdown 转换为 HTML
+        html_content = markdown(
+            markdown_content,
+            extensions=['tables', 'fenced_code', 'nl2br']
+        )
+
+        # 添加中文字体和样式
+        styled_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {{
+            size: A4;
+            margin: 2cm;
+        }}
+
+        body {{
+            font-family: 'SimHei', 'STHeiti', 'Microsoft YaHei', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+        }}
+
+        h1 {{
+            font-size: 20pt;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.3em;
+            margin-top: 1em;
+        }}
+
+        h2 {{
+            font-size: 16pt;
+            color: #34495e;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+        }}
+
+        h3 {{
+            font-size: 14pt;
+            color: #7f8c8d;
+            margin-top: 1em;
+        }}
+
+        table {{
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }}
+
+        th, td {{
+            border: 1px solid #bdc3c7;
+            padding: 8px;
+            text-align: left;
+        }}
+
+        th {{
+            background-color: #ecf0f1;
+            font-weight: bold;
+        }}
+
+        tr:nth-child(even) {{
+            background-color: #f8f9fa;
+        }}
+
+        ul, ol {{
+            margin: 0.5em 0;
+            padding-left: 2em;
+        }}
+
+        li {{
+            margin: 0.3em 0;
+        }}
+
+        blockquote {{
+            border-left: 4px solid #3498db;
+            padding-left: 1em;
+            margin: 1em 0;
+            color: #555;
+            background-color: #f7f9fa;
+            padding: 0.5em 1em;
+        }}
+
+        code {{
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+        }}
+
+        strong {{
+            color: #e74c3c;
+            font-weight: bold;
+        }}
+
+        hr {{
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 1.5em 0;
+        }}
+
+        .emoji {{
+            font-size: 1.2em;
+        }}
+    </style>
+</head>
+<body>
+    {html_content}
+</body>
+</html>
+"""
+
+        # 使用 WeasyPrint 将 HTML 转换为 PDF
+        HTML(string=styled_html).write_pdf(output_path)
+
+        logger.info(f"PDF导出成功: {output_path}")
         return output_path
 
 
