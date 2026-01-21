@@ -9,7 +9,13 @@ from pathlib import Path
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from .base_tool import BaseTool
+try:
+    from .base_tool import BaseTool
+except ImportError:
+    # 支持直接运行
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from tools.base_tool import BaseTool
 
 
 # ============================================================================
@@ -85,7 +91,7 @@ class ReportGeneratorTool(BaseTool):
         cost_breakdown: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        生成购房方案报告。
+        生成购房方案报告 - 使用LLM生成人话版报告。
 
         这个方法会被Agent自动调用，参数由OpenAI根据schema传入。
 
@@ -97,235 +103,227 @@ class ReportGeneratorTool(BaseTool):
         Returns:
             包含报告内容的字典
         """
-        logger.info("开始生成购房方案报告")
+        logger.info("开始生成购房方案报告（使用LLM）")
 
-        # 生成各个部分
+        # 使用LLM生成报告
+        report_content = self._generate_report_with_llm(
+            user_profile, policies, cost_breakdown
+        )
+
         report = {
-            "report_content": self._build_report_content(
-                user_profile, policies, cost_breakdown
-            ),
-            "sections": {
-                "policy_interpretation": self._generate_policy_section(policies),
-                "cost_breakdown": self._generate_cost_section(cost_breakdown),
-                "action_steps": self._generate_action_steps(user_profile, policies),
-                "summary": self._generate_summary(user_profile, cost_breakdown),
-            }
+            "report_content": report_content,
+            "user_profile": user_profile,
+            "policies": policies,
+            "cost_breakdown": cost_breakdown,
         }
 
         logger.info("报告生成完成")
         return report
 
     # ============================================================================
-    # 辅助方法 - 实现具体的报告生成逻辑
+    # 核心方法 - 使用LLM生成报告
     # ============================================================================
 
-    def _build_report_content(
+    def _generate_report_with_llm(
         self,
         user_profile: Dict[str, Any],
         policies: Dict[str, Any],
         cost_breakdown: Dict[str, Any]
     ) -> str:
         """
-        构建完整报告内容。
+        使用LLM生成购房方案报告。
+
+        这是核心方法，通过精心设计的prompt让LLM生成通俗易懂的报告。
+
+        Args:
+            user_profile: 用户画像
+            policies: 政策信息
+            cost_breakdown: 成本计算
 
         Returns:
-            格式化的报告字符串
+            LLM生成的完整报告文本
         """
-        # TODO: 实现完整的报告生成逻辑
-        # 可以使用Jinja2模板，或者直接拼接字符串
+        import json
+        from openai import OpenAI
+        import os
+        from dotenv import load_dotenv
 
-        content = f"""
-# 购房资金方案报告
+        # 加载环境变量
+        load_dotenv()
 
-## 一、客户画像
-{self._format_user_profile(user_profile)}
+        # 初始化OpenAI客户端
+        api_key = os.getenv('OPENAI_API_KEY')
+        base_url = os.getenv('OPENAI_API_BASE_URL')
 
-## 二、政策解读（人话版）
-{self._generate_policy_section(policies)}
+        if not api_key:
+            logger.error("未找到OPENAI_API_KEY，无法生成报告")
+            raise ValueError("必须配置 OPENAI_API_KEY 才能生成报告")
 
-## 三、资金方案
-{self._generate_cost_section(cost_breakdown)}
+        try:
+            # 支持自定义base_url
+            if base_url:
+                client = OpenAI(api_key=api_key, base_url=base_url)
+                logger.info(f"使用自定义API端点: {base_url}")
+            else:
+                client = OpenAI(api_key=api_key)
 
-## 四、办理步骤
-{self._generate_action_steps(user_profile, policies)}
+            # 构建给LLM的prompt
+            system_prompt = self._create_report_generation_prompt()
+            user_message = self._format_data_for_llm(user_profile, policies, cost_breakdown)
 
-## 五、方案总结
-{self._generate_summary(user_profile, cost_breakdown)}
-"""
-        return content.strip()
+            logger.info("调用LLM生成报告...")
 
-    def _format_user_profile(self, user_profile: Dict[str, Any]) -> str:
-        """格式化用户画像信息。"""
-        # TODO: 实现用户画像格式化
-        return f"""
-- 购房区域：{user_profile.get('location', 'N/A')}
-- 购房预算：{user_profile.get('budget', 0) / 10000:.0f}万元
-- 身份情况：{user_profile.get('identity_info', {})}
-- 购房需求：{user_profile.get('purchase_needs', {})}
+            # 调用LLM
+            response = client.chat.completions.create(
+                model="Qwen3-Max",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7,
+                max_tokens=3000
+            )
+
+            report_content = response.choices[0].message.content
+            logger.info(f"LLM生成报告成功，长度: {len(report_content)}字符")
+
+            return report_content
+
+        except Exception as e:
+            logger.error(f"LLM生成报告失败: {str(e)}")
+            raise
+
+    def _create_report_generation_prompt(self) -> str:
+        """
+        创建报告生成的System Prompt。
+
+        这个prompt定义了LLM的角色、任务和输出格式。
+
+        Returns:
+            System prompt字符串
+        """
+        return """
+你是一位资深的购房顾问，专注于为客户生成通俗易懂、专业准确的购房资金方案报告。
+
+## 你的角色定位
+
+1. **客观中立**：不推销产品，基于政策和数据提供建议
+2. **通俗易懂**：将复杂的政策法规转化为"人话"，像和朋友聊天一样解释
+3. **结构清晰**：报告要有明确的模块划分，便于客户理解和执行
+4. **重点突出**：用表格、列表、加粗等方式突出关键数字
+
+## 你的任务
+
+用户会提供三部分信息：
+1. **用户画像**（user_profile）：客户的基本情况和购房需求
+2. **政策信息**（policies）：适用的购房政策
+3. **成本明细**（cost_breakdown）：详细的资金计算结果
+
+你需要生成一份**完整的购房资金方案报告**，包含以下部分：
+
+### 一、客户情况总结
+- 简洁概括客户的购房需求和预算
+- 突出关键信息（区域、预算、身份、首套/二套）
+
+### 二、政策解读（人话版）
+- **核心要求**：把复杂政策转化为大白话
+- 使用"也就是说..."、"简单来说..."
+- 举实际例子说明
+- 突出限制条件和注意事项
+- 覆盖：限购政策、贷款政策、公积金政策、税费政策
+
+### 三、资金方案详解
+- **用表格**展示成本总览（房屋总价、首付、贷款、税费）
+- 详细说明贷款结构（商贷+公积金的组合）
+- 月供计算及还款压力分析
+- 各项税费明细
+
+### 四、办理步骤清单
+- 分阶段列出办理步骤
+- 每个步骤要具体可操作
+- 标注预计时间或注意事项
+- 使用 [ ] 复选框格式
+
+### 五、方案总结与建议
+- 提炼关键数字（需准备多少现金、月供多少）
+- 给出专业建议
+- 风险提示
+
+## 输出格式要求
+
+1. 使用Markdown格式
+2. 使用表格展示数字
+3. 使用列表和复选框
+4. 使用加粗突出重点
+5. 语言通俗易懂，避免专业术语
+6. 多用"您"、"建议"等亲切用语
+
+## 语言风格示例
+
+❌ 差的表达：
+"根据《北京市限购政策》第三条，非京籍购房需满足连续60个月社保或纳税证明。"
+
+✅ 好的表达：
+"简单来说，如果您不是北京户口，需要在北京连续缴纳5年社保或个税才能买房。也就是说，中间不能断档，否则就要重新计算。"
+
+❌ 差的表达：
+"契税按差额累进税率计征。"
+
+✅ 好的表达：
+"契税就是买房时交的税，根据房子面积不同，税率也不同：
+• 90平米以下：交1%
+• 90-140平米：交1.5%
+• 140平米以上：交3%"
+
+现在，请根据用户提供的数据，生成一份专业、通俗、实用的购房资金方案报告！
 """.strip()
 
-    def _generate_policy_section(self, policies: Dict[str, Any]) -> str:
-        """
-        生成政策解读部分（人话版）。
-
-        核心：将复杂的政策法规转化为通俗易懂的语言。
-
-        Args:
-            policies: 政策信息
-
-        Returns:
-            人话版政策解读
-        """
-        # TODO: 实现政策解读逻辑
-        # 技巧：
-        # 1. 避免法律术语，用"大白话"
-        # 2. 多用"也就是说..."、"简单来说..."
-        # 3. 举实际例子
-        # 4. 突出关键限制和注意事项
-
-        policy_text = "### 购房资格\n"
-
-        if 'purchase_restriction' in policies:
-            policy_text += f"{policies['purchase_restriction']}\n\n"
-
-        policy_text += "### 贷款政策\n"
-        if 'loan_policy' in policies:
-            policy_text += f"{policies['loan_policy']}\n\n"
-
-        policy_text += "### 公积金政策\n"
-        if 'provident_fund' in policies:
-            policy_text += f"{policies['provident_fund']}\n"
-
-        return policy_text
-
-    def _generate_cost_section(self, cost_breakdown: Dict[str, Any]) -> str:
-        """
-        生成结构化成本清单。
-
-        Args:
-            cost_breakdown: 成本计算结果
-
-        Returns:
-            格式化的成本清单
-        """
-        # TODO: 实现成本清单生成
-        # 使用表格格式，清晰展示各项费用
-
-        cost_text = """
-### 购房成本总览
-
-| 项目 | 金额 | 说明 |
-|------|------|------|
-"""
-
-        # 添加首付
-        if 'down_payment' in cost_breakdown:
-            dp = cost_breakdown['down_payment']
-            cost_text += f"| 首付款 | {dp.get('amount', 0)}元 | 占比{dp.get('percentage', 0)}% |\n"
-
-        # 添加贷款
-        if 'loan_breakdown' in cost_breakdown:
-            loan = cost_breakdown['loan_breakdown']
-            cost_text += f"| 贷款总额 | {loan.get('total_loan', 0)}元 | |\n"
-
-        # 添加月供
-        if 'monthly_payment' in cost_breakdown:
-            monthly = cost_breakdown['monthly_payment']
-            cost_text += f"| 月供 | {monthly.get('total', 0)}元 | {monthly.get('years', 30)}年 |\n"
-
-        # 添加税费
-        if 'taxes' in cost_breakdown:
-            taxes = cost_breakdown['taxes']
-            total_tax = sum(taxes.values()) if isinstance(taxes, dict) else 0
-            cost_text += f"| 各项税费 | {total_tax}元 | 契税+增值税+个税 |\n"
-
-        return cost_text
-
-    def _generate_action_steps(
+    def _format_data_for_llm(
         self,
         user_profile: Dict[str, Any],
-        policies: Dict[str, Any]
-    ) -> str:
-        """
-        生成办理步骤清单。
-
-        Args:
-            user_profile: 用户信息
-            policies: 政策信息
-
-        Returns:
-            分步骤的行动指南
-        """
-        # TODO: 实现步骤清单生成
-        # 根据用户情况，生成个性化的办理步骤
-
-        steps = """
-### 阶段一：准备阶段
-- [ ] 准备身份证、户口本、婚姻证明等材料
-- [ ] 查询个人征信报告
-- [ ] 确认公积金缴存情况
-
-### 阶段二：贷款申请
-- [ ] 选择贷款银行
-- [ ] 提交贷款申请材料
-- [ ] 等待银行审批
-
-### 阶段三：交易过户
-- [ ] 签订购房合同
-- [ ] 办理网签
-- [ ] 缴纳税费
-- [ ] 办理过户登记
-
-### 阶段四：贷款发放
-- [ ] 领取房产证
-- [ ] 办理抵押登记
-- [ ] 银行放款
-"""
-        return steps
-
-    def _generate_summary(
-        self,
-        user_profile: Dict[str, Any],
+        policies: Dict[str, Any],
         cost_breakdown: Dict[str, Any]
     ) -> str:
         """
-        生成方案总结（关键信息汇总）。
+        将三个参数格式化为给LLM的输入。
 
         Args:
-            user_profile: 用户信息
-            cost_breakdown: 成本计算结果
+            user_profile: 用户画像
+            policies: 政策信息
+            cost_breakdown: 成本计算
 
         Returns:
-            方案总结
+            格式化的字符串
         """
-        # TODO: 实现总结生成
-        # 提炼最关键的信息
+        import json
 
-        summary = """
-### 核心数据一览
+        formatted_data = f"""
+请根据以下信息生成购房资金方案报告：
+
+# 一、用户画像
+```json
+{json.dumps(user_profile, ensure_ascii=False, indent=2)}
+```
+
+# 二、适用政策
+```json
+{json.dumps(policies, ensure_ascii=False, indent=2)}
+```
+
+# 三、成本计算结果
+```json
+{json.dumps(cost_breakdown, ensure_ascii=False, indent=2)}
+```
+
+---
+
+请生成一份通俗易懂、结构清晰的购房资金方案报告。记住：
+1. 用"人话"解释政策，不要法律术语
+2. 用表格展示关键数字
+3. 给出具体的办理步骤
+4. 突出重点和风险提示
 """
-
-        # 提取关键数字
-        if 'down_payment' in cost_breakdown:
-            dp_amount = cost_breakdown['down_payment'].get('amount', 0)
-            summary += f"- 💰 需准备现金：{dp_amount / 10000:.0f}万元（首付+税费+其他费用）\n"
-
-        if 'monthly_payment' in cost_breakdown:
-            monthly = cost_breakdown['monthly_payment'].get('total', 0)
-            summary += f"- 💳 月供金额：{monthly:.0f}元\n"
-
-        summary += """
-### 重要提示
-- ⚠️ 本方案基于当前政策，具体以最新政策为准
-- ⚠️ 贷款审批以银行实际评估为准
-- ⚠️ 建议提前准备好所有材料
-
-### 专业建议
-- ✅ 建议保留一定的流动资金作为应急储备
-- ✅ 注意月供不超过家庭月收入的50%
-- ✅ 办理前再次核实最新政策
-"""
-        return summary
+        return formatted_data.strip()
 
     def save_report(self, report_content: str, output_path: Path) -> Path:
         """
@@ -368,6 +366,11 @@ class ReportGeneratorTool(BaseTool):
 # ============================================================================
 
 if __name__ == "__main__":
+    # 支持直接运行（修复相对导入问题）
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
     # 查看工具schema
     tool = ReportGeneratorTool()
 
