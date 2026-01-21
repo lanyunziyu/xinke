@@ -1,0 +1,95 @@
+{
+  "mcpServers": {
+    "amap-mcp": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/amap-mcp/"
+    },
+    "baidumap": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/baidumap/"
+    },
+    "building-knowledge": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/building-knowledge/"
+    },
+    "ershou-house": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/ershou-house/"
+    },
+    "estimate-market-report": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/estimate-market-report/"
+    },
+    "front-agent-mcp": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/front-agent-mcp/"
+    },
+    "house-search-rag": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/house-search-rag/"
+    },
+    "house-search-rest-to-mcp": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/house-search-rest-to-mcp/"
+    },
+    "ke-map": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/ke-map/"
+    },
+    "risk-content-security-audit-api": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/risk-content-security-audit-api/"
+    },
+    "web-search": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/web-search/"
+    },
+    "web-search-building": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/web-search-building/"
+    },
+    "xiaoyi-knowledge-search": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25zdW1lciI6Im1jcC1tYW5hZ2UtMTAxNTktMTc1MDgzNzcxMTU0MyIsIndvcmtzcGFjZSI6InNpbGluZSIsImNvbnN1bWVySWQiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJzdWIiOiI2ODViYTljZjg2YzNmZWZlMGMwYjEyNmIiLCJleHAiOjMzMjc2MjM5MzExLCJpYXQiOjE3NTA4Mzc3MTF9.rjYG1-h07QZB3elygdVImy8xse0MAU9VQ-qNelWQvA8"
+      },
+      "type": "streamable_http",
+      "url": "http://mcp-gateway.ke.com/mcp-gateway-2/mcp/xiaoyi-knowledge-search/"
+    }
+  }
+}
