@@ -1,12 +1,6 @@
 # AI/LLM Framework
 openai>=1.0.0
-anthropic>=0.18.0
-langchain>=0.1.0
-langchain-openai>=0.0.5
-
-# Agent Framework (可选择其一)
-# langgraph>=0.0.20
-# autogen>=0.2.0
+openai-agents==0.2.3  # OpenAI官方Agent框架
 
 # Data Processing
 pandas>=2.0.0
