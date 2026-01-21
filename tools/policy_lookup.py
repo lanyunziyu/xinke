@@ -6,18 +6,37 @@ Supports RAG-based semantic search for accurate policy matching.
 """
 from typing import Dict, Any, List
 from loguru import logger
+from pydantic import BaseModel, Field
+
+from .base_tool import BaseTool
 
 
-class PolicyLookupTool:
+# ============================================================================
+# 1. Schema定义
+# ============================================================================
+
+class PolicyLookupInput(BaseModel):
+    """政策查询工具的输入参数Schema。"""
+
+    user_profile: Dict[str, Any] = Field(
+        description="用户画像信息，包括location(区域)、identity_info(身份)、purchase_needs(购房需求)等"
+    )
+
+
+# ============================================================================
+# 2. 工具实现
+# ============================================================================
+
+class PolicyLookupTool(BaseTool):
     """
-    Tool for looking up housing purchase policies.
+    政策查询工具 - 根据用户画像查询相关购房政策。
 
-    Features:
-    - Search policies by region (区域政策)
-    - Search policies by buyer identity (京籍/非京籍)
-    - Search loan policies (商贷/公积金/组合贷)
-    - Support RAG-based semantic search
+    支持查询：限购政策、贷款政策、公积金政策、税费政策、户口政策等。
     """
+
+    name = "policy_lookup"
+    description = "查询购房相关政策，包括限购、贷款、公积金、税费等政策"
+    args_schema = PolicyLookupInput
 
     def __init__(self, use_rag: bool = True):
         """
@@ -26,13 +45,14 @@ class PolicyLookupTool:
         Args:
             use_rag: Whether to use RAG for policy retrieval
         """
+        super().__init__()
         self.use_rag = use_rag
         self.vector_store = None  # TODO: Initialize vector store
         logger.info("PolicyLookupTool initialized")
 
-    def lookup(self, user_profile: Dict[str, Any]) -> Dict[str, Any]:
+    def run(self, user_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Look up relevant policies based on user profile.
+        查询购房政策 - Agent会调用这个方法。
 
         Args:
             user_profile: User profile information including:
@@ -81,6 +101,11 @@ class PolicyLookupTool:
                 "relocation_process": "TODO: 户口迁出流程",
             }
         }
+
+    # 保留原有的辅助方法以便后续实现
+    def lookup(self, user_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """Alias for run method for backward compatibility."""
+        return self.run(user_profile)
 
     def _build_search_query(self, user_profile: Dict[str, Any]) -> str:
         """
