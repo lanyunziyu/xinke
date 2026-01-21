@@ -31,3 +31,4 @@ logs/
 
 # Data
 data/cache/
+frontend/node_modules

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 10px 5px; padding: 10px 20px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+        .chat-container { max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 8px; }
+        .user-message { background: #007bff; color: white; margin-left: 20%; }
+        .assistant-message { background: #f8f9fa; margin-right: 20%; }
+        .streaming-message { background: #e3f2fd; margin-right: 20%; border-left: 4px solid #2196f3; }
+        input[type="text"] { width: 70%; padding: 8px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Vue前端API接口集成测试</h1>
+
+    <!-- Health Check Test -->
+    <div class="test-section" id="health-test">
+        <h3>1. 健康检查测试</h3>
+        <button onclick="testHealth()">测试健康检查</button>
+        <div id="health-result"></div>
+    </div>
+
+    <!-- Non-streaming Chat Test -->
+    <div class="test-section" id="chat-test">
+        <h3>2. 非流式聊天测试</h3>
+        <input type="text" id="chat-input" placeholder="输入购房需求..." value="我想在北京朝阳区买首套房，预算800万">
+        <button onclick="testChat()">发送消息</button>
+        <div id="chat-result"></div>
+    </div>
+
+    <!-- Streaming Chat Test -->
+    <div class="test-section" id="stream-test">
+        <h3>3. 流式聊天测试</h3>
+        <input type="text" id="stream-input" placeholder="输入购房需求..." value="请帮我分析一下在北京买房需要准备哪些资金">
+        <button onclick="testStreamChat()">发送流式消息</button>
+        <div class="chat-container" id="stream-chat"></div>
+    </div>
+
+    <!-- Session Management Test -->
+    <div class="test-section" id="session-test">
+        <h3>4. 会话管理测试</h3>
+        <button onclick="testSessions()">获取会话列表</button>
+        <button onclick="testResetSessions()">重置所有会话</button>
+        <div id="session-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let currentConversationId = null;
+
+        // 健康检查测试
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<div class="loading">测试中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                if (response.ok && data.status === 'healthy') {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 健康检查通过</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ 服务状态异常</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 连接失败</h4>
+                        <p>错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 非流式聊天测试
+        async function testChat() {
+            const resultDiv = document.getElementById('chat-result');
+            const input = document.getElementById('chat-input').value;
+
+            if (!input.trim()) {
+                resultDiv.innerHTML = '<div class="error">请输入消息</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="loading">发送中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: input,
+                        stream: false,
+                        conversation_id: currentConversationId,
+                        max_iterations: 10
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    currentConversationId = data.conversation_id;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 聊天成功</h4>
+                            <p><strong>会话ID:</strong> ${data.conversation_id}</p>
+                            <p><strong>迭代次数:</strong> ${data.iterations}</p>
+                            <p><strong>助手回复:</strong></p>
+                            <pre>${data.response}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ 聊天失败</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 请求失败</h4>
+                        <p>错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 流式聊天测试
+        async function testStreamChat() {
+            const chatContainer = document.getElementById('stream-chat');
+            const input = document.getElementById('stream-input').value;
+
+            if (!input.trim()) {
+                chatContainer.innerHTML = '<div class="error">请输入消息</div>';
+                return;
+            }
+
+            // 添加用户消息
+            chatContainer.innerHTML += `
+                <div class="message user-message">
+                    <strong>用户:</strong> ${input}
+                </div>
+            `;
+
+            // 创建助手消息容器
+            const assistantMessageDiv = document.createElement('div');
+            assistantMessageDiv.className = 'message streaming-message';
+            assistantMessageDiv.innerHTML = '<strong>助手:</strong> <span class="content"></span>';
+            chatContainer.appendChild(assistantMessageDiv);
+
+            const contentSpan = assistantMessageDiv.querySelector('.content');
+            let fullMessage = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: input,
+                        stream: true,
+                        conversation_id: currentConversationId,
+                        max_iterations: 10
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let currentEvent = null;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // 保留可能不完整的最后一行
+
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+
+                        if (trimmedLine.startsWith('event: ')) {
+                            currentEvent = trimmedLine.slice(7);
+                        } else if (trimmedLine.startsWith('data: ')) {
+                            if (currentEvent) {
+                                try {
+                                    const data = JSON.parse(trimmedLine.slice(6));
+                                    handleStreamEvent(currentEvent, data, contentSpan);
+
+                                    if (currentEvent === 'complete' && data.conversation_id) {
+                                        currentConversationId = data.conversation_id;
+                                    }
+                                } catch (e) {
+                                    console.warn('解析SSE数据失败:', e, trimmedLine);
+                                }
+                            }
+                        } else if (trimmedLine === '') {
+                            currentEvent = null;
+                        }
+                    }
+                }
+
+                assistantMessageDiv.className = 'message assistant-message';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            } catch (error) {
+                contentSpan.innerHTML = `<span style="color: red;">❌ 流式请求失败: ${error.message}</span>`;
+            }
+        }
+
+        function handleStreamEvent(eventType, data, contentElement) {
+            switch (eventType) {
+                case 'message':
+                    contentElement.innerHTML += (data.content || data.message || '');
+                    break;
+                case 'tool_call':
+                    contentElement.innerHTML += `<em>[工具调用: ${data.name || '未知'}]</em>`;
+                    break;
+                case 'error':
+                    contentElement.innerHTML += `<span style="color: red;">❌ 错误: ${data.error || data.message}</span>`;
+                    break;
+                case 'complete':
+                    contentElement.innerHTML += '<em> [完成]</em>';
+                    break;
+                default:
+                    console.log('未知事件类型:', eventType, data);
+            }
+
+            document.getElementById('stream-chat').scrollTop = document.getElementById('stream-chat').scrollHeight;
+        }
+
+        // 会话管理测试
+        async function testSessions() {
+            const resultDiv = document.getElementById('session-result');
+            resultDiv.innerHTML = '<div class="loading">获取中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/sessions`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 会话列表获取成功</h4>
+                            <p><strong>总数:</strong> ${data.total}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ 获取失败</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 请求失败</h4>
+                        <p>错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testResetSessions() {
+            const resultDiv = document.getElementById('session-result');
+            resultDiv.innerHTML = '<div class="loading">重置中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/reset`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    currentConversationId = null;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 会话重置成功</h4>
+                            <p>${data.message}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ 重置失败</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 请求失败</h4>
+                        <p>错误: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 页面加载完成后自动运行健康检查
+        window.onload = function() {
+            testHealth();
+        }
+    </script>
+</body>
+</html>

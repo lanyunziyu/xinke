@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #b8daff; }
+        button {
+            margin: 10px 5px;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .iframe-container {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-running { background-color: #28a745; animation: pulse 1.5s infinite; }
+        .status-stopped { background-color: #dc3545; }
+        .status-loading { background-color: #ffc107; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            padding: 15px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .logs {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 购房资金方案助手 - 前端测试界面</h1>
+
+        <!-- 服务状态 -->
+        <div class="test-section">
+            <h3>📊 服务状态监控</h3>
+            <div class="service-status" id="backend-status">
+                <span class="status-indicator status-loading"></span>
+                <strong>后端API服务:</strong> <span id="backend-text">检查中...</span>
+            </div>
+            <div class="service-status" id="frontend-status">
+                <span class="status-indicator status-loading"></span>
+                <strong>前端开发服务:</strong> <span id="frontend-text">检查中...</span>
+            </div>
+
+            <div class="stats" id="stats-container" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-number" id="agent-tools">-</div>
+                    <div>AI工具数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="active-sessions">-</div>
+                    <div>活跃会话</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="response-time">-</div>
+                    <div>API响应时间(ms)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">✅</div>
+                    <div>集成状态</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速测试 -->
+        <div class="test-section">
+            <h3>🧪 快速API测试</h3>
+            <button onclick="testHealthAPI()">测试健康检查</button>
+            <button onclick="testChatAPI()">测试聊天功能</button>
+            <button onclick="testStreamAPI()">测试流式响应</button>
+            <button onclick="testSessions()">测试会话管理</button>
+            <div id="api-test-results"></div>
+        </div>
+
+        <!-- 实时日志 -->
+        <div class="test-section">
+            <h3>📝 实时测试日志</h3>
+            <button onclick="clearLogs()">清空日志</button>
+            <div class="logs" id="logs"></div>
+        </div>
+
+        <!-- Vue应用iframe -->
+        <div class="test-section">
+            <h3>🎯 Vue前端应用预览</h3>
+            <div class="info">
+                <p><strong>功能说明:</strong></p>
+                <ul>
+                    <li>统一的聊天式交互界面</li>
+                    <li>支持自然语言购房需求描述</li>
+                    <li>实时流式响应显示</li>
+                    <li>工具调用进度指示</li>
+                    <li>会话管理和重置功能</li>
+                </ul>
+                <p><strong>测试建议:</strong> 尝试输入 "我想在北京朝阳区买首套房，预算800万，需要了解政策和资金准备"</p>
+            </div>
+            <div class="iframe-container">
+                <iframe src="http://localhost:3002/" title="Vue前端应用"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const log = (message, type = 'info') => {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#74c0fc';
+            logs.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        };
+
+        const clearLogs = () => {
+            document.getElementById('logs').innerHTML = '';
+        };
+
+        // 检查服务状态
+        const checkServices = async () => {
+            log('开始检查服务状态...');
+
+            // 检查后端API
+            try {
+                const startTime = Date.now();
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                const responseTime = Date.now() - startTime;
+
+                if (response.ok && data.status === 'healthy') {
+                    document.getElementById('backend-status').querySelector('.status-indicator').className = 'status-indicator status-running';
+                    document.getElementById('backend-text').textContent = `运行正常 (端口: 8000)`;
+
+                    // 更新统计数据
+                    document.getElementById('agent-tools').textContent = data.tools_count || 0;
+                    document.getElementById('response-time').textContent = responseTime;
+
+                    log(`后端API服务正常 - 响应时间: ${responseTime}ms`, 'success');
+                } else {
+                    throw new Error('服务状态异常');
+                }
+            } catch (error) {
+                document.getElementById('backend-status').querySelector('.status-indicator').className = 'status-indicator status-stopped';
+                document.getElementById('backend-text').textContent = `连接失败: ${error.message}`;
+                log(`后端API服务异常: ${error.message}`, 'error');
+            }
+
+            // 检查前端服务
+            try {
+                const response = await fetch('http://localhost:3002/');
+                if (response.ok) {
+                    document.getElementById('frontend-status').querySelector('.status-indicator').className = 'status-indicator status-running';
+                    document.getElementById('frontend-text').textContent = `运行正常 (端口: 3002)`;
+                    log('前端开发服务正常', 'success');
+                } else {
+                    throw new Error('前端服务响应异常');
+                }
+            } catch (error) {
+                document.getElementById('frontend-status').querySelector('.status-indicator').className = 'status-indicator status-stopped';
+                document.getElementById('frontend-text').textContent = `连接失败: ${error.message}`;
+                log(`前端服务异常: ${error.message}`, 'error');
+            }
+
+            // 检查会话数量
+            try {
+                const response = await fetch('http://localhost:8000/sessions');
+                const data = await response.json();
+                document.getElementById('active-sessions').textContent = data.total || 0;
+            } catch (error) {
+                document.getElementById('active-sessions').textContent = '0';
+            }
+
+            document.getElementById('stats-container').style.display = 'grid';
+        };
+
+        // API测试函数
+        const testHealthAPI = async () => {
+            const resultDiv = document.getElementById('api-test-results');
+            resultDiv.innerHTML = '<div class="info">测试健康检查API...</div>';
+            log('测试健康检查API...');
+
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+
+                if (response.ok && data.status === 'healthy') {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 健康检查通过</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    log('健康检查API测试通过', 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h4>❌ 健康检查失败</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                    log('健康检查API测试失败', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ 连接失败</h4><p>${error.message}</p></div>`;
+                log(`健康检查API连接失败: ${error.message}`, 'error');
+            }
+        };
+
+        const testChatAPI = async () => {
+            const resultDiv = document.getElementById('api-test-results');
+            resultDiv.innerHTML = '<div class="info">测试聊天API...</div>';
+            log('测试聊天API...');
+
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '请简单介绍你的功能',
+                        stream: false,
+                        max_iterations: 3
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 聊天API测试通过</h4>
+                            <p><strong>会话ID:</strong> ${data.conversation_id}</p>
+                            <p><strong>迭代次数:</strong> ${data.iterations}</p>
+                            <p><strong>回复预览:</strong></p>
+                            <pre>${data.response.substring(0, 300)}...</pre>
+                        </div>
+                    `;
+                    log(`聊天API测试通过 - 会话: ${data.conversation_id}`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h4>❌ 聊天API失败</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                    log('聊天API测试失败', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ 聊天API连接失败</h4><p>${error.message}</p></div>`;
+                log(`聊天API连接失败: ${error.message}`, 'error');
+            }
+        };
+
+        const testStreamAPI = async () => {
+            const resultDiv = document.getElementById('api-test-results');
+            resultDiv.innerHTML = '<div class="info">测试流式API...请等待流式响应完成</div>';
+            log('开始测试流式API...');
+
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '请介绍北京购房的基本政策',
+                        stream: true,
+                        max_iterations: 3
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let eventCount = 0;
+                let fullMessage = '';
+
+                resultDiv.innerHTML = '<div class="info"><h4>📡 流式响应进行中...</h4><div id="stream-content"></div></div>';
+                const streamContent = document.getElementById('stream-content');
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.startsWith('event: ')) {
+                            const eventType = line.slice(7);
+                            eventCount++;
+                            log(`流式事件 #${eventCount}: ${eventType}`);
+                        } else if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.content) {
+                                    fullMessage += data.content;
+                                    streamContent.innerHTML = `<pre>${fullMessage}...</pre>`;
+                                }
+                            } catch (e) {
+                                log(`解析SSE数据失败: ${e.message}`, 'error');
+                            }
+                        }
+                    }
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ 流式API测试完成</h4>
+                        <p><strong>事件数量:</strong> ${eventCount}</p>
+                        <p><strong>消息长度:</strong> ${fullMessage.length} 字符</p>
+                        <p><strong>完整响应:</strong></p>
+                        <pre>${fullMessage.substring(0, 500)}...</pre>
+                    </div>
+                `;
+                log(`流式API测试完成 - 收到 ${eventCount} 个事件`, 'success');
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ 流式API测试失败</h4><p>${error.message}</p></div>`;
+                log(`流式API测试失败: ${error.message}`, 'error');
+            }
+        };
+
+        const testSessions = async () => {
+            const resultDiv = document.getElementById('api-test-results');
+            resultDiv.innerHTML = '<div class="info">测试会话管理...</div>';
+            log('测试会话管理API...');
+
+            try {
+                const response = await fetch('http://localhost:8000/sessions');
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ 会话管理测试通过</h4>
+                            <p><strong>活跃会话数:</strong> ${data.total}</p>
+                            <p><strong>会话列表:</strong></p>
+                            <pre>${JSON.stringify(data.sessions, null, 2)}</pre>
+                        </div>
+                    `;
+                    log(`会话管理测试通过 - 发现 ${data.total} 个会话`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><h4>❌ 会话管理失败</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                    log('会话管理测试失败', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ 会话管理连接失败</h4><p>${error.message}</p></div>`;
+                log(`会话管理连接失败: ${error.message}`, 'error');
+            }
+        };
+
+        // 页面加载完成后执行
+        window.onload = () => {
+            log('🚀 前端测试界面已加载');
+            checkServices();
+
+            // 定期刷新服务状态
+            setInterval(checkServices, 30000);
+        };
+    </script>
+</body>
+</html>
