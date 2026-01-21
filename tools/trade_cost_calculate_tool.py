@@ -7,13 +7,28 @@
 支持粗算(mode=0)和精算(mode=1)两种模式。
 """
 import json
-from typing import Dict, Any, List, Literal
+from typing import Dict, Any, List, Literal, Optional
 from enum import Enum
 import logging
+from pathlib import Path
 
 from pydantic import BaseModel, Field
-from tools.base_tool import BaseTool
-from services.mcp_client import MCPClient
+
+# 支持直接运行和模块导入
+try:
+    from .base_tool import BaseTool
+except ImportError:
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from tools.base_tool import BaseTool
+
+try:
+    from services.mcp_client import MCPClient
+except ImportError:
+    try:
+        from ..services.mcp_client import MCPClient
+    except ImportError:
+        MCPClient = None  # MCP客户端可选
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +57,10 @@ class TradeCostCalculateArgs(BaseModel):
     """购房成本测算工具参数模型"""
 
     # 房屋基本信息组
-    FANG_XING: Literal["LOU_FANG", "PING_FANG", "DI_XIA_SHI"] = Field(
-        ..., description="房型:LOU_FANG(楼房)/PING_FANG(平房)/DI_XIA_SHI(地下室)"
+    FANG_XING: Optional[Literal["LOU_FANG", "PING_FANG", "DI_XIA_SHI"]] = Field(
+        default=None, description="房型:LOU_FANG(楼房)/PING_FANG(平房)/DI_XIA_SHI(地下室)"
     )
-    FANG_WU_LEI_XING: Literal[
+    FANG_WU_LEI_XING: Optional[Literal[
         "SHANG_PIN_FANG",
         "CHENG_BEN_JIA_YI_GOU_GONG_FANG",
         "YOU_HUI_JIA_BIAO_ZHUN_JIA_YI_GOU_GONG_FANG",
@@ -54,17 +69,17 @@ class TradeCostCalculateArgs(BaseModel):
         "AN_JING_SHI_FANG_GUAN_LI_DE_FANG_WU",
         "XIAN_JIA_SHANG_PIN_FANG",
         "ZI_ZHU_XING_SHANG_PIN_FANG"
-    ] = Field(..., description="房屋类型")
-    FANG_WU_XING_ZHI: Literal["ZHU_ZHAI", "FEI_ZHU_ZHAI", "CHE_WEI"] = Field(
-        ..., description="房屋性质:ZHU_ZHAI(住宅)/FEI_ZHU_ZHAI(非住宅)/CHE_WEI(车位)"
+    ]] = Field(default=None, description="房屋类型")
+    FANG_WU_XING_ZHI: Optional[Literal["ZHU_ZHAI", "FEI_ZHU_ZHAI", "CHE_WEI"]] = Field(
+        default=None, description="房屋性质:ZHU_ZHAI(住宅)/FEI_ZHU_ZHAI(非住宅)/CHE_WEI(车位)"
     )
-    CHAN_QUAN_DI_ZHI: str = Field(
-        ..., description="产权地址,示例:北京市海淀区颐和园路15号院2号楼2单元501室"
+    CHAN_QUAN_DI_ZHI: Optional[str] = Field(
+        default=None, description="产权地址,示例:北京市海淀区颐和园路15号院2号楼2单元501室"
     )
-    JIAN_ZHU_MIAN_JI: float = Field(..., ge=0, description="建筑面积(平方米)")
-    ZONG_LOU_CENG: int = Field(..., ge=1, description="总楼层(层)")
-    SUO_ZAI_LOU_CENG: int = Field(..., ge=1, description="所在楼层(层)")
-    JIAN_CHENG_NIAN_DAI: Literal[
+    JIAN_ZHU_MIAN_JI: Optional[float] = Field(default=None, ge=0, description="建筑面积(平方米)")
+    ZONG_LOU_CENG: Optional[int] = Field(default=None, ge=1, description="总楼层(层)")
+    SUO_ZAI_LOU_CENG: Optional[int] = Field(default=None, ge=1, description="所在楼层(层)")
+    JIAN_CHENG_NIAN_DAI: Optional[Literal[
         "2011_BIGGER",
         "2007-2010",
         "2004-2006",
@@ -74,56 +89,64 @@ class TradeCostCalculateArgs(BaseModel):
         "1971-1980",
         "1970_SMALLER",
         "WU_JIAN_ZHU_NIAN_DAI"
-    ] = Field(..., description="建成年代")
+    ]] = Field(default=None, description="建成年代")
 
     # 区域信息组
-    districtCode: str = Field(..., description="城区code,ALL表示全国通用")
-    cityCode: str = Field(..., description="城市code,ALL表示全国通用")
-    CITY_DISTRICT_CODE: List[str] = Field(
-        ..., description="城市城区编码数组,示例:['110000','110108']"
+    districtCode: Optional[str] = Field(default=None, description="城区code,ALL表示全国通用")
+    cityCode: Optional[str] = Field(default=None, description="城市code,ALL表示全国通用")
+    CITY_DISTRICT_CODE: Optional[List[str]] = Field(
+        default=None, description="城市城区编码数组,示例:['110000','110108']"
     )
-    FANG_WU_SUO_ZAI_QU_YU: str = Field(..., description="房屋所在区域code")
-    JIE_DAO_XIANG_ZHEN: Literal["JIE_DAO", "XIANG", "ZHEN"] = Field(
-        ..., description="街道乡镇:JIE_DAO(街道)/XIANG(乡)/ZHEN(镇)"
+    FANG_WU_SUO_ZAI_QU_YU: Optional[str] = Field(default=None, description="房屋所在区域code")
+    JIE_DAO_XIANG_ZHEN: Optional[Literal["JIE_DAO", "XIANG", "ZHEN"]] = Field(
+        default=None, description="街道乡镇:JIE_DAO(街道)/XIANG(乡)/ZHEN(镇)"
     )
 
     # 价格信息组
-    CHENG_JIAO_JIA: float = Field(..., ge=0, description="成交价(万元)")
-    WANG_QIAN_JIA_GE: float = Field(..., ge=0, description="网签价格(万元)")
+    CHENG_JIAO_JIA: Optional[float] = Field(default=None, ge=0, description="成交价(万元)")
+    WANG_QIAN_JIA_GE: Optional[float] = Field(default=None, ge=0, description="网签价格(万元)")
 
     # 交易信息组
-    mode: int = Field(..., description="模式:0-粗算,1-精算")
-    FANG_WU_CHI_YOU_NIAN_XIAN: Literal["BU_MAN_ER", "MAN_ER_BU_MAN_WU", "MAN_WU"] = Field(
-        ..., description="房屋持有年限:BU_MAN_ER(不满二)/MAN_ER_BU_MAN_WU(满二不满五)/MAN_WU(满五)"
+    mode: Optional[int] = Field(default=0, description="模式:0-粗算,1-精算")
+    FANG_WU_CHI_YOU_NIAN_XIAN: Optional[Literal["BU_MAN_ER", "MAN_ER_BU_MAN_WU", "MAN_WU"]] = Field(
+        default=None, description="房屋持有年限:BU_MAN_ER(不满二)/MAN_ER_BU_MAN_WU(满二不满五)/MAN_WU(满五)"
     )
-    FANG_WU_TAO_SHU: Literal["SHOU_TAO", "ER_TAO", "SAN_TAO"] = Field(
-        ..., description="房屋套数:SHOU_TAO(首套)/ER_TAO(二套)/SAN_TAO(三套)"
+    FANG_WU_TAO_SHU: Optional[Literal["SHOU_TAO", "ER_TAO", "SAN_TAO"]] = Field(
+        default=None, description="房屋套数:SHOU_TAO(首套)/ER_TAO(二套)/SAN_TAO(三套)"
     )
-    CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU: Literal["WEI_YI", "BU_WEI_YI"] = Field(
-        ..., description="出售方家庭持有套数:WEI_YI(唯一)/BU_WEI_YI(不唯一)"
+    CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU: Optional[Literal["WEI_YI", "BU_WEI_YI"]] = Field(
+        default=None, description="出售方家庭持有套数:WEI_YI(唯一)/BU_WEI_YI(不唯一)"
     )
 
     # 交易主体信息组
-    GOU_MAI_REN_XING_ZHI: Literal["GE_REN", "FEI_GE_REN"] = Field(
-        ..., description="购买人性质:GE_REN(个人)/FEI_GE_REN(非个人)"
+    GOU_MAI_REN_XING_ZHI: Optional[Literal["GE_REN", "FEI_GE_REN"]] = Field(
+        default=None, description="购买人性质:GE_REN(个人)/FEI_GE_REN(非个人)"
     )
-    CHU_SHOU_REN_XING_ZHI: Literal["GE_REN", "FEI_GE_REN"] = Field(
-        ..., description="出售人性质:GE_REN(个人)/FEI_GE_REN(非个人)"
+    CHU_SHOU_REN_XING_ZHI: Optional[Literal["GE_REN", "FEI_GE_REN"]] = Field(
+        default=None, description="出售人性质:GE_REN(个人)/FEI_GE_REN(非个人)"
     )
-    NENG_FOU_TI_GONG_YUAN_SHI_QI_SHUI_PIAO: Literal["SHI", "FOU"] = Field(
-        ..., description="能否提供原始契税票:SHI(是)/FOU(否)"
+    NENG_FOU_TI_GONG_YUAN_SHI_QI_SHUI_PIAO: Optional[Literal["SHI", "FOU"]] = Field(
+        default=None, description="能否提供原始契税票:SHI(是)/FOU(否)"
     )
 
     # 贷款信息组
-    JIAO_YI_FANG_SHI: str = Field(..., description="交易方式,如:CHUN_SHANG_DAI(纯商贷)")
-    DAI_KUAN_JIN_E: float = Field(..., ge=0, description="贷款金额(万元)")
-    DAI_KUAN_NIAN_XIAN: int = Field(..., ge=1, le=30, description="贷款年限(年)")
-    HUAN_KUAN_FANG_SHI: Literal["DENG_E_BEN_JIN", "DENG_E_BEN_XI"] = Field(
-        ..., description="还款方式:DENG_E_BEN_JIN(等额本金)/DENG_E_BEN_XI(等额本息)"
+    JIAO_YI_FANG_SHI: Optional[str] = Field(default=None, description="交易方式,如:CHUN_SHANG_DAI(纯商贷)")
+    DAI_KUAN_JIN_E: Optional[float] = Field(default=None, ge=0, description="贷款金额(万元)")
+    DAI_KUAN_NIAN_XIAN: Optional[int] = Field(default=None, ge=1, le=30, description="贷款年限(年)")
+    HUAN_KUAN_FANG_SHI: Optional[Literal["DENG_E_BEN_JIN", "DENG_E_BEN_XI"]] = Field(
+        default=None, description="还款方式:DENG_E_BEN_JIN(等额本金)/DENG_E_BEN_XI(等额本息)"
     )
 
+    # 商贷专用字段
+    SHANG_DAI_DAI_KUAN_JIN_E: Optional[float] = Field(default=None, ge=0, description="商贷贷款金额(元)")
+    SHANG_DAI_DAI_KUAN_NIAN_XIAN: Optional[int] = Field(default=None, ge=1, le=30, description="商贷贷款年限(年)")
+
+    # 公积金贷款专用字段(可选)
+    GONG_JI_JIN_DAI_KUAN_JIN_E: Optional[float] = Field(default=None, ge=0, description="公积金贷款金额(元)")
+    GONG_JI_JIN_DAI_KUAN_NIAN_XIAN: Optional[int] = Field(default=None, ge=1, le=30, description="公积金贷款年限(年)")
+
     # 业务标识
-    houseCode: str = Field(..., description="房源code,业务唯一标识")
+    houseCode: Optional[str] = Field(default=None, description="房源code,业务唯一标识")
 
 
 class TradeCostCalculateTool(BaseTool):
@@ -145,18 +168,26 @@ class TradeCostCalculateTool(BaseTool):
         """
         准备MCP调用参数,确保所有参数格式正确
 
+        跳过None值(不传递),将Enum转换为字符串值
+
         Args:
             **kwargs: 原始参数
 
         Returns:
-            格式化后的参数字典
+            格式化后的参数字典,不包含None值
         """
         prepared = {}
         for key, value in kwargs.items():
-            if isinstance(value, Enum):
+            # 跳过None值 - 完全不传递该参数
+            if value is None:
+                continue
+            # 处理Enum
+            elif isinstance(value, Enum):
                 prepared[key] = value.value
+            # 处理列表
             elif isinstance(value, list):
                 prepared[key] = [v.value if isinstance(v, Enum) else v for v in value]
+            # 其他值直接使用
             else:
                 prepared[key] = value
         return prepared
@@ -309,35 +340,49 @@ def main():
     """测试工具执行"""
     tool = TradeCostCalculateTool()
 
-    # 测试用例: 北京海淀区普通商品房
+    # 测试用例: 北京朝阳区普通商品房 - 首套房纯商贷
+    # 场景: 900万成交价，贷款630万(70%贷款比例)，30年等额本息
     result = tool.run(
-        FANG_XING="LOU_FANG",
-        FANG_WU_LEI_XING="SHANG_PIN_FANG",
-        districtCode="110108",
-        cityCode="110000",
-        CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU="WEI_YI",
-        JIE_DAO_XIANG_ZHEN="JIE_DAO",
-        DAI_KUAN_NIAN_XIAN=20,
-        JIAN_ZHU_MIAN_JI=100.0,
-        mode=1,
-        FANG_WU_XING_ZHI="ZHU_ZHAI",
-        CHAN_QUAN_DI_ZHI="北京市海淀区颐和园路15号院2号楼2单元501室",
-        DAI_KUAN_JIN_E=200.0,
-        FANG_WU_CHI_YOU_NIAN_XIAN="MAN_WU",
-        GOU_MAI_REN_XING_ZHI="GE_REN",
-        ZONG_LOU_CENG=20,
-        WANG_QIAN_JIA_GE=500.0,
-        FANG_WU_SUO_ZAI_QU_YU="41",
-        HUAN_KUAN_FANG_SHI="DENG_E_BEN_XI",
-        SUO_ZAI_LOU_CENG=12,
-        CITY_DISTRICT_CODE=["110000", "110108"],
-        CHENG_JIAO_JIA=500.0,
-        JIAO_YI_FANG_SHI="CHUN_SHANG_DAI",
-        FANG_WU_TAO_SHU="SHOU_TAO",
-        houseCode="TEST_HOUSE_001",
-        JIAN_CHENG_NIAN_DAI="2011_BIGGER",
-        CHU_SHOU_REN_XING_ZHI="GE_REN",
-        NENG_FOU_TI_GONG_YUAN_SHI_QI_SHUI_PIAO="FOU"
+        # 房屋基本信息
+        FANG_XING="LOU_FANG",                              # 楼房
+        FANG_WU_LEI_XING="SHANG_PIN_FANG",                # 商品房
+        FANG_WU_XING_ZHI="ZHU_ZHAI",                      # 住宅
+        CHAN_QUAN_DI_ZHI="北京市朝阳区建国路88号SOHO现代城2号楼1单元1501室",
+        JIAN_ZHU_MIAN_JI=110.5,                           # 110.5平米
+        ZONG_LOU_CENG=30,                                 # 总30层
+        SUO_ZAI_LOU_CENG=15,                              # 第15层
+        JIAN_CHENG_NIAN_DAI="2011_BIGGER",                # 2011年后建成
+
+        # 区域信息
+        cityCode="110000",                                # 北京市
+        districtCode="110105",                            # 朝阳区
+        CITY_DISTRICT_CODE=["110000", "110105"],         # 城市城区编码
+        FANG_WU_SUO_ZAI_QU_YU="110105",                  # 朝阳区
+        JIE_DAO_XIANG_ZHEN="JIE_DAO",                    # 街道
+
+        # 价格信息
+        CHENG_JIAO_JIA=900.0,                            # 成交价900万
+        WANG_QIAN_JIA_GE=900.0,                          # 网签价900万
+
+        # 交易信息
+        mode=0,                                           # 粗算模式
+        FANG_WU_CHI_YOU_NIAN_XIAN="MAN_WU",              # 满五年
+        FANG_WU_TAO_SHU="SHOU_TAO",                      # 首套房
+        CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU="WEI_YI", # 卖方唯一住房
+
+        # 交易主体
+        GOU_MAI_REN_XING_ZHI="GE_REN",                   # 买方个人
+        CHU_SHOU_REN_XING_ZHI="GE_REN",                  # 卖方个人
+        NENG_FOU_TI_GONG_YUAN_SHI_QI_SHUI_PIAO="SHI",    # 能提供原始契税票
+
+        # 贷款信息 - 纯商贷
+        JIAO_YI_FANG_SHI="CHUN_SHANG_DAI",               # 纯商贷
+        SHANG_DAI_DAI_KUAN_JIN_E=6300000,                # 商贷630万元(注意单位是元)
+        SHANG_DAI_DAI_KUAN_NIAN_XIAN=30,                 # 30年
+        HUAN_KUAN_FANG_SHI="DENG_E_BEN_XI",              # 等额本息
+
+        # 业务标识
+        houseCode="BJ_CHAOYANG_TEST_20260121_001"        # 房源唯一标识
     )
     print("购房成本计算结果:", json.dumps(result, ensure_ascii=False, indent=2))
 
