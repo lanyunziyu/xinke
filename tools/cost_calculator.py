@@ -6,22 +6,28 @@ Including down payment, taxes, loan calculations, and monthly payments.
 """
 from typing import Dict, Any, Optional
 from loguru import logger
+from pydantic import BaseModel, Field
+
+from .base_tool import BaseTool
 
 
-class CostCalculatorTool:
-    """
-    Tool for calculating housing purchase costs.
+# Schema定义
+class CostCalculatorInput(BaseModel):
+    """成本计算工具的输入参数Schema。"""
+    user_profile: Dict[str, Any] = Field(description="用户画像")
+    policies: Dict[str, Any] = Field(description="政策信息")
 
-    Features:
-    - Calculate down payment based on policies
-    - Calculate various taxes (契税、增值税、个税)
-    - Calculate loan amount and monthly payment
-    - Support combination loan (组合贷) calculation
-    - Calculate provident fund withdrawal amount
-    """
+
+class CostCalculatorTool(BaseTool):
+    """成本计算工具 - 计算购房总成本和资金方案。"""
+
+    name = "cost_calculator"
+    description = "计算购房成本，包括首付、贷款金额、月供、税费等"
+    args_schema = CostCalculatorInput
 
     def __init__(self):
         """Initialize Cost Calculator Tool."""
+        super().__init__()
         self.loan_interest_rates = {
             "commercial": {
                 "first_home": 0.0365,  # 商贷首套利率 (示例值)
@@ -34,7 +40,7 @@ class CostCalculatorTool:
         }
         logger.info("CostCalculatorTool initialized")
 
-    def calculate(
+    def run(
         self,
         user_profile: Dict[str, Any],
         policies: Dict[str, Any]
@@ -98,6 +104,10 @@ class CostCalculatorTool:
                 "registration_fee": 0,  # 登记费
             }
         }
+
+    def calculate(self, user_profile, policies):
+        """Alias for run method."""
+        return self.run(user_profile, policies)
 
     def calculate_down_payment(
         self,
