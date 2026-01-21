@@ -1,0 +1,383 @@
+[
+  {
+    "test_id": "case_001",
+    "name": "北京朝阳区首套房纯商贷",
+    "description": "基础场景：京籍首套房，纯商贷，满五唯一",
+    "input": {
+      "user_query": "我是北京户口，想在朝阳区买首套房，看中了一套900万的商品房（满五唯一，110平米），我打算贷款630万，30年等额本息。请帮我计算需要准备多少首付和月供？",
+      "house_info": {
+        "FANG_XING": "LOU_FANG",
+        "FANG_WU_LEI_XING": "SHANG_PIN_FANG",
+        "FANG_WU_XING_ZHI": "ZHU_ZHAI",
+        "JIAN_ZHU_MIAN_JI": 110.5,
+        "CHENG_JIAO_JIA": 900.0,
+        "WANG_QIAN_JIA_GE": 900.0,
+        "FANG_WU_CHI_YOU_NIAN_XIAN": "MAN_WU",
+        "CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU": "WEI_YI",
+        "FANG_WU_TAO_SHU": "SHOU_TAO",
+        "JIAO_YI_FANG_SHI": "CHUN_SHANG_DAI",
+        "SHANG_DAI_DAI_KUAN_JIN_E": 6300000,
+        "SHANG_DAI_DAI_KUAN_NIAN_XIAN": 30,
+        "HUAN_KUAN_FANG_SHI": "DENG_E_BEN_XI"
+      }
+    },
+    "expected_output": {
+      "down_payment": {
+        "amount": 2700000,
+        "description": "首付款270万元（30%）"
+      },
+      "loan": {
+        "amount": 6300000,
+        "type": "纯商贷",
+        "term_years": 30,
+        "monthly_payment_range": {
+          "min": 32000,
+          "max": 36000,
+          "description": "月供约3.2-3.6万元（根据实际利率）"
+        }
+      },
+      "taxes": {
+        "deed_tax": {
+          "rate": 0.015,
+          "description": "契税1.5%（90-140平米首套房）"
+        },
+        "personal_income_tax": {
+          "exempt": true,
+          "description": "满五唯一免征个税"
+        },
+        "vat": {
+          "exempt": true,
+          "description": "满两年免征增值税"
+        }
+      },
+      "total_cost_range": {
+        "min": 2830000,
+        "max": 2900000,
+        "description": "初期需准备资金约283-290万（含首付、税费、其他费用）"
+      }
+    },
+    "validation_points": [
+      {
+        "key": "down_payment",
+        "description": "首付金额是否正确（房价的30%）",
+        "validation_type": "exact_match",
+        "tolerance": 0
+      },
+      {
+        "key": "loan_amount",
+        "description": "贷款金额是否正确",
+        "validation_type": "exact_match",
+        "tolerance": 0
+      },
+      {
+        "key": "monthly_payment",
+        "description": "月供是否在合理范围内",
+        "validation_type": "range",
+        "tolerance": 0.1
+      },
+      {
+        "key": "deed_tax_rate",
+        "description": "契税率是否正确（90-140平米首套1.5%）",
+        "validation_type": "exact_match",
+        "tolerance": 0
+      },
+      {
+        "key": "tax_exemptions",
+        "description": "满五唯一是否正确免征个税和增值税",
+        "validation_type": "boolean"
+      }
+    ]
+  },
+  {
+    "test_id": "case_002",
+    "name": "北京海淀区首套房组合贷",
+    "description": "组合贷场景：公积金120万+商贷480万",
+    "input": {
+      "user_query": "我在海淀区买首套房，总价800万，想用组合贷（公积金120万+商贷480万），30年等额本息。房子是95平米的商品房，满两年不满五。请计算首付和月供。",
+      "house_info": {
+        "FANG_XING": "LOU_FANG",
+        "FANG_WU_LEI_XING": "SHANG_PIN_FANG",
+        "FANG_WU_XING_ZHI": "ZHU_ZHAI",
+        "JIAN_ZHU_MIAN_JI": 95.0,
+        "CHENG_JIAO_JIA": 800.0,
+        "WANG_QIAN_JIA_GE": 800.0,
+        "FANG_WU_CHI_YOU_NIAN_XIAN": "MAN_ER_BU_MAN_WU",
+        "CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU": "BU_WEI_YI",
+        "FANG_WU_TAO_SHU": "SHOU_TAO",
+        "JIAO_YI_FANG_SHI": "ZU_HE_DAI",
+        "GONG_JI_JIN_DAI_KUAN_JIN_E": 1200000,
+        "GONG_JI_JIN_DAI_KUAN_NIAN_XIAN": 30,
+        "SHANG_DAI_DAI_KUAN_JIN_E": 4800000,
+        "SHANG_DAI_DAI_KUAN_NIAN_XIAN": 30,
+        "HUAN_KUAN_FANG_SHI": "DENG_E_BEN_XI"
+      }
+    },
+    "expected_output": {
+      "down_payment": {
+        "amount": 2000000,
+        "description": "首付款200万元（25%，因为用了公积金）"
+      },
+      "loan": {
+        "total_amount": 6000000,
+        "type": "组合贷",
+        "commercial_loan": {
+          "amount": 4800000,
+          "monthly_payment_range": {
+            "min": 24000,
+            "max": 28000
+          }
+        },
+        "provident_fund_loan": {
+          "amount": 1200000,
+          "monthly_payment_range": {
+            "min": 5000,
+            "max": 6000
+          }
+        },
+        "total_monthly_payment_range": {
+          "min": 29000,
+          "max": 34000,
+          "description": "月供约2.9-3.4万元"
+        }
+      },
+      "taxes": {
+        "deed_tax": {
+          "rate": 0.01,
+          "description": "契税1%（90平米以下首套房）"
+        },
+        "personal_income_tax": {
+          "applicable": true,
+          "rate": 0.01,
+          "description": "个税1%（满二不满五且不唯一需缴纳）"
+        },
+        "vat": {
+          "exempt": true,
+          "description": "满两年免征增值税"
+        }
+      }
+    },
+    "validation_points": [
+      {
+        "key": "down_payment",
+        "description": "首付金额（使用公积金后为25%）",
+        "validation_type": "exact_match",
+        "tolerance": 0
+      },
+      {
+        "key": "loan_structure",
+        "description": "组合贷的结构是否正确划分",
+        "validation_type": "structure"
+      },
+      {
+        "key": "deed_tax_rate",
+        "description": "契税率1%（90平以下首套）",
+        "validation_type": "exact_match",
+        "tolerance": 0
+      },
+      {
+        "key": "personal_income_tax",
+        "description": "个税是否正确计算（满二不满五且不唯一）",
+        "validation_type": "boolean"
+      }
+    ]
+  },
+  {
+    "test_id": "case_003",
+    "name": "北京朝阳区二套房",
+    "description": "二套房场景：首付比例和税率变化",
+    "input": {
+      "user_query": "我在朝阳区买二套房，总价1000万，看中的是普通住宅，120平米，满五唯一。我计划贷款500万，20年等额本息。请计算首付和各项费用。",
+      "house_info": {
+        "FANG_XING": "LOU_FANG",
+        "FANG_WU_LEI_XING": "SHANG_PIN_FANG",
+        "FANG_WU_XING_ZHI": "ZHU_ZHAI",
+        "JIAN_ZHU_MIAN_JI": 120.0,
+        "CHENG_JIAO_JIA": 1000.0,
+        "WANG_QIAN_JIA_GE": 1000.0,
+        "FANG_WU_CHI_YOU_NIAN_XIAN": "MAN_WU",
+        "CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU": "WEI_YI",
+        "FANG_WU_TAO_SHU": "ER_TAO",
+        "JIAO_YI_FANG_SHI": "CHUN_SHANG_DAI",
+        "SHANG_DAI_DAI_KUAN_JIN_E": 5000000,
+        "SHANG_DAI_DAI_KUAN_NIAN_XIAN": 20,
+        "HUAN_KUAN_FANG_SHI": "DENG_E_BEN_XI"
+      }
+    },
+    "expected_output": {
+      "down_payment": {
+        "amount": 5000000,
+        "description": "首付款500万元（二套房50%）"
+      },
+      "loan": {
+        "amount": 5000000,
+        "type": "纯商贷",
+        "term_years": 20,
+        "monthly_payment_range": {
+          "min": 30000,
+          "max": 35000,
+          "description": "月供约3.0-3.5万元"
+        }
+      },
+      "taxes": {
+        "deed_tax": {
+          "rate": 0.03,
+          "description": "契税3%（二套房统一3%）"
+        },
+        "personal_income_tax": {
+          "exempt": true,
+          "description": "满五唯一免征个税"
+        },
+        "vat": {
+          "exempt": true,
+          "description": "满两年免征增值税"
+        }
+      },
+      "total_cost_range": {
+        "min": 5300000,
+        "max": 5400000,
+        "description": "初期需准备资金约530-540万"
+      }
+    },
+    "validation_points": [
+      {
+        "key": "down_payment_ratio",
+        "description": "二套房首付比例是否为50%",
+        "validation_type": "percentage",
+        "expected_value": 0.5
+      },
+      {
+        "key": "deed_tax_rate",
+        "description": "二套房契税率是否为3%",
+        "validation_type": "exact_match",
+        "expected_value": 0.03
+      },
+      {
+        "key": "tax_exemption",
+        "description": "满五唯一免个税",
+        "validation_type": "boolean"
+      }
+    ]
+  },
+  {
+    "test_id": "case_004",
+    "name": "北京西城区小户型首套房",
+    "description": "小户型优惠：90平以下契税1%",
+    "input": {
+      "user_query": "我在西城区买首套房，房子是85平米的两居室，总价650万，不满两年。我打算贷款455万（70%），30年等额本金。请计算所有费用。",
+      "house_info": {
+        "FANG_XING": "LOU_FANG",
+        "FANG_WU_LEI_XING": "SHANG_PIN_FANG",
+        "FANG_WU_XING_ZHI": "ZHU_ZHAI",
+        "JIAN_ZHU_MIAN_JI": 85.0,
+        "CHENG_JIAO_JIA": 650.0,
+        "WANG_QIAN_JIA_GE": 650.0,
+        "FANG_WU_CHI_YOU_NIAN_XIAN": "BU_MAN_ER",
+        "CHU_SHOU_FANG_JIA_TING_CHI_YOU_TAO_SHU": "BU_WEI_YI",
+        "FANG_WU_TAO_SHU": "SHOU_TAO",
+        "JIAO_YI_FANG_SHI": "CHUN_SHANG_DAI",
+        "SHANG_DAI_DAI_KUAN_JIN_E": 4550000,
+        "SHANG_DAI_DAI_KUAN_NIAN_XIAN": 30,
+        "HUAN_KUAN_FANG_SHI": "DENG_E_BEN_JIN"
+      }
+    },
+    "expected_output": {
+      "down_payment": {
+        "amount": 1950000,
+        "description": "首付款195万元（30%）"
+      },
+      "loan": {
+        "amount": 4550000,
+        "type": "纯商贷",
+        "term_years": 30,
+        "repayment_method": "等额本金",
+        "monthly_payment_range": {
+          "first_month_min": 28000,
+          "first_month_max": 32000,
+          "description": "首月月供约2.8-3.2万元，逐月递减"
+        }
+      },
+      "taxes": {
+        "deed_tax": {
+          "rate": 0.01,
+          "amount": 65000,
+          "description": "契税1%（90平米以下首套房优惠）"
+        },
+        "personal_income_tax": {
+          "applicable": true,
+          "description": "不满两年需缴纳个税"
+        },
+        "vat": {
+          "applicable": true,
+          "description": "不满两年需缴纳增值税"
+        }
+      }
+    },
+    "validation_points": [
+      {
+        "key": "deed_tax_rate",
+        "description": "90平以下首套房契税1%",
+        "validation_type": "exact_match",
+        "expected_value": 0.01
+      },
+      {
+        "key": "repayment_method",
+        "description": "等额本金还款方式识别",
+        "validation_type": "string_match"
+      },
+      {
+        "key": "tax_liability",
+        "description": "不满两年需缴纳增值税和个税",
+        "validation_type": "boolean"
+      }
+    ]
+  },
+  {
+    "test_id": "case_005",
+    "name": "非京籍购房资格审查",
+    "description": "非京籍政策限制场景",
+    "input": {
+      "user_query": "我是外地户口，在北京工作3年，社保正常缴纳，想在大兴区买首套房，总价400万。请问我能买吗？如果能买，首付和月供怎么算？",
+      "user_profile": {
+        "hukou": "非京籍",
+        "social_security_months": 36,
+        "purchase_count": 0,
+        "target_area": "大兴区"
+      },
+      "house_info": {
+        "CHENG_JIAO_JIA": 400.0,
+        "FANG_WU_TAO_SHU": "SHOU_TAO"
+      }
+    },
+    "expected_output": {
+      "eligibility": {
+        "can_purchase": false,
+        "reason": "非京籍购房需连续缴纳60个月社保或个税，您目前仅缴纳36个月，不符合购房资格",
+        "requirement": "需要再缴纳24个月社保才能购买"
+      },
+      "alternative_suggestions": [
+        "继续缴纳社保直至满足60个月要求",
+        "考虑通过积分落户获得北京户口",
+        "考虑在环京地区购房（如河北燕郊、固安等）"
+      ]
+    },
+    "validation_points": [
+      {
+        "key": "eligibility_check",
+        "description": "是否正确判断不符合购房资格",
+        "validation_type": "boolean",
+        "expected_value": false
+      },
+      {
+        "key": "reason_explanation",
+        "description": "是否清楚说明原因（需60个月社保）",
+        "validation_type": "keyword_match",
+        "keywords": ["60个月", "社保", "不符合"]
+      },
+      {
+        "key": "alternative_provided",
+        "description": "是否提供替代建议",
+        "validation_type": "exists"
+      }
+    ]
+  }
+]
